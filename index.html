@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fatura de Táxi</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --black: #0a0a0a;
+    --dark: #111111;
+    --gold: #c9a84c;
+    --gold-light: #e8c97a;
+    --gold-pale: #f5e6c0;
+    --cream: #faf7f0;
+    --gray: #8a8a8a;
+    --gray-light: #d5d0c8;
+    --white: #ffffff;
+  }
+
+  body {
+    background: var(--cream);
+    font-family: 'Lato', sans-serif;
+    color: var(--black);
+    min-height: 100vh;
+    padding: 40px 20px;
+  }
+
+  /* ── FORM PAGE ── */
+  #form-page {
+    max-width: 680px;
+    margin: 0 auto;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .form-header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+
+  .form-header .taxi-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .form-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.6rem;
+    font-weight: 900;
+    color: var(--black);
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+
+  .form-header h1 span {
+    color: var(--gold);
+  }
+
+  .form-header p {
+    margin-top: 10px;
+    color: var(--gray);
+    font-size: 0.95rem;
+    font-weight: 300;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-light);
+    border-radius: 2px;
+    padding: 36px 40px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gold-pale);
+  }
+
+  /* ── FORM FIELDS ── */
+  .field-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+
+  .field-group.single { grid-template-columns: 1fr; }
+  .field-group.three  { grid-template-columns: 1fr 1fr; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .field label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gray);
+  }
+
+  .field input {
+    border: 1px solid var(--gray-light);
+    border-radius: 2px;
+    padding: 11px 14px;
+    font-family: 'Lato', sans-serif;
+    font-size: 0.95rem;
+    color: var(--black);
+    background: var(--cream);
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+
+  .field input:focus {
+    border-color: var(--gold);
+    background: var(--white);
+  }
+
+  .field input::placeholder { color: var(--gray-light); }
+
+  /* ── VIAGENS LIST ── */
+  #viagens-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .viagem-item {
+    background: var(--cream);
+    border: 1px solid var(--gray-light);
+    border-radius: 2px;
+    padding: 14px 16px;
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 12px;
+    align-items: center;
+    animation: fadeUp 0.3s ease both;
+  }
+
+  .v-qty-badge {
+    display: inline-block;
+    background: var(--black);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    margin-top: 4px;
+  }
+
+  .v-daterange {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gray);
+    margin-top: 3px;
+    display: block;
+  }
+
+  .viagem-item span {
+    font-size: 0.9rem;
+    color: var(--black);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .viagem-item .v-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gray);
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .viagem-item .v-price {
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--gold);
+  }
+
+  .btn-remove {
+    background: none;
+    border: 1px solid var(--gray-light);
+    border-radius: 2px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    color: var(--gray);
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .btn-remove:hover { border-color: #e05555; color: #e05555; }
+
+  .empty-viagens {
+    text-align: center;
+    padding: 24px;
+    color: var(--gray-light);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    border: 1px dashed var(--gray-light);
+    border-radius: 2px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-add {
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 1.5px dashed var(--gold);
+    border-radius: 2px;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0;
+  }
+
+  .btn-add:hover { background: var(--gold-pale); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 16px;
+    background: var(--black);
+    border: none;
+    border-radius: 2px;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 24px;
+  }
+
+  .btn-primary:hover { background: var(--dark); letter-spacing: 4px; }
+
+  .no-trips-msg {
+    display: none;
+    text-align: center;
+    padding: 10px;
+    color: #e05555;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+  }
+
+  /* ═══════════════════════════════════════
+     INVOICE PAGE
+  ═══════════════════════════════════════ */
+  #invoice-page {
+    display: none;
+    max-width: 760px;
+    margin: 0 auto;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .inv-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    justify-content: flex-end;
+  }
+
+  .btn-back {
+    padding: 11px 22px;
+    background: none;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 2px;
+    color: var(--gray);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-back:hover { border-color: var(--black); color: var(--black); }
+
+  .btn-pdf {
+    padding: 11px 28px;
+    background: var(--black);
+    border: none;
+    border-radius: 2px;
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-pdf:hover { background: #222; }
+
+  /* ── INVOICE DOCUMENT ── */
+  #invoice-doc {
+    background: var(--white);
+    border: 1px solid var(--gray-light);
+    box-shadow: 0 8px 60px rgba(0,0,0,0.10);
+  }
+
+  .inv-top-bar {
+    background: var(--black);
+    padding: 36px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .inv-company h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--white);
+    letter-spacing: -0.5px;
+  }
+
+  .inv-company h2 span { color: var(--gold); }
+
+  .inv-company p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gray);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .inv-badge {
+    text-align: right;
+  }
+
+  .inv-badge .label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gray);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .inv-badge .number {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-weight: 700;
+    display: block;
+    margin-top: 2px;
+  }
+
+  .inv-badge .date {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gray-light);
+    margin-top: 4px;
+    display: block;
+  }
+
+  /* ── PASSENGER SECTION ── */
+  .inv-meta {
+    padding: 32px 50px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    border-bottom: 1px solid var(--gold-pale);
+    background: linear-gradient(to bottom, #f8f4ec, var(--white));
+  }
+
+  .inv-meta-block .meta-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 2.5px;
+    color: var(--gold);
+    margin-bottom: 6px;
+  }
+
+  .inv-meta-block .meta-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--black);
+  }
+
+  .inv-meta-block .meta-sub {
+    font-size: 0.85rem;
+    color: var(--gray);
+    margin-top: 3px;
+    font-weight: 300;
+  }
+
+  /* ── TABLE ── */
+  .inv-table-wrap {
+    padding: 36px 50px;
+  }
+
+  .inv-table-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .inv-table-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--gold-pale);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead tr {
+    border-bottom: 2px solid var(--black);
+  }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--gray);
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+  }
+
+  thead th:last-child { text-align: right; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--gold-pale);
+    transition: background 0.15s;
+  }
+
+  tbody tr:hover { background: #fdf9f2; }
+
+  tbody td {
+    padding: 14px 12px;
+    font-size: 0.92rem;
+    color: var(--black);
+    vertical-align: middle;
+  }
+
+  tbody td:last-child {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    color: var(--black);
+  }
+
+  .td-route {
+    font-size: 0.8rem;
+    color: var(--gray);
+  }
+
+  .td-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--gray);
+    text-align: center;
+  }
+
+  /* ── TOTALS ── */
+  .inv-totals {
+    padding: 0 50px 40px;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .totals-box {
+    width: 280px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--gold-pale);
+  }
+
+  .total-row .t-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gray);
+  }
+
+  .total-row .t-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    color: var(--black);
+  }
+
+  .total-row.grand {
+    border-bottom: none;
+    margin-top: 6px;
+    padding-top: 14px;
+    border-top: 2px solid var(--black);
+  }
+
+  .total-row.grand .t-label {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--black);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .total-row.grand .t-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: var(--gold);
+  }
+
+  /* ── FOOTER ── */
+  .inv-footer {
+    background: var(--black);
+    padding: 24px 50px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .inv-footer p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gray);
+    letter-spacing: 1.5px;
+  }
+
+  .inv-footer .thank {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    color: var(--gold-light);
+    font-style: italic;
+  }
+
+  /* ── DECORATIVE STRIPE ── */
+  .gold-stripe {
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    .field-group { grid-template-columns: 1fr; }
+    .viagem-item { grid-template-columns: 1fr 1fr; }
+    .viagem-item .v-col-dest { display: none; }
+    .inv-top-bar { flex-direction: column; gap: 16px; }
+    .inv-meta { grid-template-columns: 1fr; }
+    .inv-top-bar, .inv-meta, .inv-table-wrap, .inv-totals, .inv-footer { padding-left: 24px; padding-right: 24px; }
+    .inv-badge { text-align: left; }
+    .inv-footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+
+  @media print {
+    .inv-controls { display: none; }
+    body { padding: 0; background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ FORM PAGE ══════════════ -->
+<div id="form-page">
+  <div class="form-header">
+    <span class="taxi-icon">🚖</span>
+    <h1>Fatura de <span>Táxi</span></h1>
+    <p>Preencha os dados e gere o recibo profissional</p>
+  </div>
+
+  <!-- Dados do Passageiro -->
+  <div class="card">
+    <div class="card-title">Dados do Passageiro</div>
+    <div class="field-group single">
+      <div class="field">
+        <label>Nome do Passageiro</label>
+        <input type="text" id="passenger-name" placeholder="Ex: João da Silva" />
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field">
+        <label>Empresa / Referência</label>
+        <input type="text" id="passenger-company" placeholder="Opcional" />
+      </div>
+      <div class="field">
+        <label>Contacto</label>
+        <input type="text" id="passenger-contact" placeholder="Ex: +258 84 000 0000" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Viagens -->
+  <div class="card">
+    <div class="card-title">Viagens Realizadas</div>
+
+    <!-- Campos de nova viagem -->
+    <div class="field-group">
+      <div class="field">
+        <label>Local de Partida</label>
+        <input type="text" id="trip-origin" placeholder="Ex: Aeroporto Internacional" />
+      </div>
+      <div class="field">
+        <label>Destino</label>
+        <input type="text" id="trip-dest" placeholder="Ex: Hotel Polana" />
+      </div>
+    </div>
+    <div class="field-group three">
+      <div class="field">
+        <label>Preço Unit. (MZN)</label>
+        <input type="number" id="trip-price" placeholder="Ex: 350" min="0" step="0.01" />
+      </div>
+      <div class="field">
+        <label>Qtd. de Viagens</label>
+        <input type="number" id="trip-qty" placeholder="Ex: 5" min="1" step="1" value="1" />
+      </div>
+    </div>
+    <div class="field-group">
+      <div class="field">
+        <label>Data de Início</label>
+        <input type="date" id="trip-date-start" />
+      </div>
+      <div class="field">
+        <label>Data de Fim</label>
+        <input type="date" id="trip-date-end" />
+      </div>
+    </div>
+
+    <button class="btn-add" onclick="addTrip()">＋ Adicionar Viagem</button>
+
+    <p class="no-trips-msg" id="no-trips-msg">Adicione pelo menos uma viagem antes de gerar a fatura.</p>
+
+    <div style="margin-top: 20px;">
+      <div id="viagens-list">
+        <div class="empty-viagens" id="empty-placeholder">Nenhuma viagem adicionada ainda</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" onclick="generateInvoice()">✦ Gerar Fatura</button>
+</div>
+
+<!-- ══════════════ INVOICE PAGE ══════════════ -->
+<div id="invoice-page">
+  <div class="inv-controls">
+    <button class="btn-back" onclick="goBack()">← Editar</button>
+    <button class="btn-pdf" onclick="downloadPDF()">⬇ Baixar PDF</button>
+  </div>
+
+  <div id="invoice-doc">
+    <div class="gold-stripe"></div>
+
+    <!-- Header -->
+    <div class="inv-top-bar">
+      <div class="inv-company">
+        <h2>Táxi<span>Premium</span></h2>
+        <p>Serviço de Transporte Executivo</p>
+      </div>
+      <div class="inv-badge">
+        <span class="label">Fatura Nº</span>
+        <span class="number" id="inv-number">—</span>
+        <span class="date" id="inv-date">—</span>
+      </div>
+    </div>
+
+    <!-- Meta -->
+    <div class="inv-meta">
+      <div class="inv-meta-block">
+        <div class="meta-label">Passageiro</div>
+        <div class="meta-value" id="inv-passenger">—</div>
+        <div class="meta-sub" id="inv-company">—</div>
+      </div>
+      <div class="inv-meta-block">
+        <div class="meta-label">Contacto</div>
+        <div class="meta-value" id="inv-contact">—</div>
+        <div class="meta-sub" id="inv-period">—</div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="inv-table-wrap">
+      <div class="inv-table-title">Detalhes das Viagens</div>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Período</th>
+            <th>Origem → Destino</th>
+            <th style="text-align:center">Qtd.</th>
+            <th style="text-align:right">Unit.</th>
+            <th style="text-align:right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody id="inv-tbody">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="inv-totals">
+      <div class="totals-box">
+        <div class="total-row">
+          <span class="t-label">Nº de Viagens</span>
+          <span class="t-val" id="inv-count">0</span>
+        </div>
+        <div class="total-row">
+          <span class="t-label">Subtotal</span>
+          <span class="t-val" id="inv-subtotal">0,00 MZN</span>
+        </div>
+        <div class="total-row grand">
+          <span class="t-label">Total a Pagar</span>
+          <span class="t-val" id="inv-total">0,00 MZN</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="inv-footer">
+      <p>Táxi Premium · Maputo, Moçambique</p>
+      <span class="thank">Obrigado pela preferência!</span>
+    </div>
+    <div class="gold-stripe"></div>
+  </div>
+</div>
+
+<script>
+  // ── STATE ──
+  let trips = [];
+  let invoiceCounter = Math.floor(1000 + Math.random() * 8000);
+
+  // Default dates: today as end, 7 days ago as start
+  const today = new Date();
+  const weekAgo = new Date(); weekAgo.setDate(today.getDate() - 6);
+  document.getElementById('trip-date-start').valueAsDate = weekAgo;
+  document.getElementById('trip-date-end').valueAsDate   = today;
+
+  // ── ADD TRIP ──
+  function addTrip() {
+    const origin    = document.getElementById('trip-origin').value.trim();
+    const dest      = document.getElementById('trip-dest').value.trim();
+    const price     = parseFloat(document.getElementById('trip-price').value);
+    const qty       = parseInt(document.getElementById('trip-qty').value) || 1;
+    const dateStart = document.getElementById('trip-date-start').value;
+    const dateEnd   = document.getElementById('trip-date-end').value;
+
+    const invalid = [];
+    if (!origin) invalid.push('trip-origin');
+    if (!dest)   invalid.push('trip-dest');
+    if (isNaN(price) || price <= 0) invalid.push('trip-price');
+    if (qty < 1)  invalid.push('trip-qty');
+
+    if (invalid.length) { highlightFields(invalid); return; }
+
+    // Swap dates if end < start
+    let ds = dateStart, de = dateEnd;
+    if (ds && de && ds > de) { [ds, de] = [de, ds]; }
+
+    trips.push({ origin, dest, price, qty, dateStart: ds, dateEnd: de });
+    renderTripList();
+    clearTripFields();
+    document.getElementById('no-trips-msg').style.display = 'none';
+  }
+
+  function highlightFields(ids) {
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      el.style.borderColor = '#e05555';
+      el.style.background  = '#fff5f5';
+      setTimeout(() => { el.style.borderColor = ''; el.style.background = ''; }, 2000);
+    });
+  }
+
+  function clearTripFields() {
+    document.getElementById('trip-origin').value = '';
+    document.getElementById('trip-dest').value   = '';
+    document.getElementById('trip-price').value  = '';
+    document.getElementById('trip-qty').value    = '1';
+    // keep date range as-is for convenience
+    document.getElementById('trip-origin').focus();
+  }
+
+  function removeTrip(index) {
+    trips.splice(index, 1);
+    renderTripList();
+  }
+
+  function renderTripList() {
+    const list = document.getElementById('viagens-list');
+
+    if (trips.length === 0) {
+      list.innerHTML = '<div class="empty-viagens" id="empty-placeholder">Nenhuma viagem adicionada ainda</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    trips.forEach((t, i) => {
+      const subtotal  = t.price * t.qty;
+      const rangeText = buildRangeLabel(t.dateStart, t.dateEnd, t.qty);
+      const item = document.createElement('div');
+      item.className = 'viagem-item';
+      item.innerHTML = `
+        <div>
+          <span class="v-label">Rota</span>
+          <span style="font-weight:600">${t.origin}</span>
+          <span class="v-daterange">→ ${t.dest}</span>
+          <span class="v-daterange">${rangeText}</span>
+        </div>
+        <div>
+          <span class="v-label">Qtd.</span>
+          <span class="v-qty-badge">× ${t.qty}</span>
+        </div>
+        <div>
+          <span class="v-label">Subtotal</span>
+          <span class="v-price">${formatMZN(subtotal)}</span>
+          <span class="v-daterange">${formatMZN(t.price)}/viagem</span>
+        </div>
+        <button class="btn-remove" onclick="removeTrip(${i})" title="Remover">✕</button>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  function buildRangeLabel(ds, de, qty) {
+    if (!ds && !de) return qty === 1 ? 'Data não definida' : `${qty} viagens`;
+    if (ds === de || !de) return formatDate(ds);
+    return `${formatDate(ds)} – ${formatDate(de)}`;
+  }
+
+  // ── FORMAT ──
+  function formatMZN(val) {
+    return val.toLocaleString('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MZN';
+  }
+
+  function formatDate(str) {
+    if (!str) return '—';
+    const [y, m, d] = str.split('-');
+    return `${d}/${m}/${y}`;
+  }
+
+  function getOverallDateRange() {
+    const allDates = [];
+    trips.forEach(t => {
+      if (t.dateStart) allDates.push(t.dateStart);
+      if (t.dateEnd)   allDates.push(t.dateEnd);
+    });
+    if (!allDates.length) return '';
+    allDates.sort();
+    const first = allDates[0], last = allDates[allDates.length - 1];
+    return first === last ? formatDate(first) : `${formatDate(first)} – ${formatDate(last)}`;
+  }
+
+  // ── GENERATE INVOICE ──
+  function generateInvoice() {
+    const name = document.getElementById('passenger-name').value.trim();
+    if (!name) {
+      highlightFields(['passenger-name']);
+      document.getElementById('passenger-name').focus();
+      return;
+    }
+    if (trips.length === 0) {
+      document.getElementById('no-trips-msg').style.display = 'block';
+      return;
+    }
+
+    const company  = document.getElementById('passenger-company').value.trim() || '—';
+    const contact  = document.getElementById('passenger-contact').value.trim() || '—';
+    const total    = trips.reduce((s, t) => s + t.price * t.qty, 0);
+    const totalQty = trips.reduce((s, t) => s + t.qty, 0);
+
+    document.getElementById('inv-number').textContent   = '#' + (++invoiceCounter);
+    document.getElementById('inv-date').textContent     = 'Emitido em ' + new Date().toLocaleDateString('pt-MZ');
+    document.getElementById('inv-passenger').textContent = name;
+    document.getElementById('inv-company').textContent  = company;
+    document.getElementById('inv-contact').textContent  = contact;
+    document.getElementById('inv-period').textContent   = 'Período: ' + getOverallDateRange();
+    document.getElementById('inv-count').textContent    = totalQty + (totalQty === 1 ? ' viagem' : ' viagens');
+    document.getElementById('inv-subtotal').textContent = formatMZN(total);
+    document.getElementById('inv-total').textContent    = formatMZN(total);
+
+    // Build table rows
+    const tbody = document.getElementById('inv-tbody');
+    tbody.innerHTML = '';
+    trips.forEach((t, i) => {
+      const subtotal  = t.price * t.qty;
+      const rangeText = buildRangeLabel(t.dateStart, t.dateEnd, t.qty);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="td-num">${i + 1}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gray);white-space:nowrap">${rangeText}</td>
+        <td>
+          <strong>${t.origin}</strong>
+          <div class="td-route">→ ${t.dest}</div>
+        </td>
+        <td style="text-align:center;font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600">× ${t.qty}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--gray)">${formatMZN(t.price)}</td>
+        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:600">${formatMZN(subtotal)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.getElementById('form-page').style.display = 'none';
+    document.getElementById('invoice-page').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goBack() {
+    document.getElementById('invoice-page').style.display = 'none';
+    document.getElementById('form-page').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ── PDF DOWNLOAD ──
+  function downloadPDF() {
+    const el   = document.getElementById('invoice-doc');
+    const name = document.getElementById('inv-passenger').textContent.replace(/\s+/g, '_');
+    const num  = document.getElementById('inv-number').textContent.replace('#', '');
+
+    const opt = {
+      margin:      [8, 8, 8, 8],
+      filename:    `Fatura_Taxi_${name}_${num}.pdf`,
+      image:       { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    const btn = document.querySelector('.btn-pdf');
+    btn.textContent = '⏳ Gerando...';
+    btn.disabled = true;
+    html2pdf().set(opt).from(el).save().then(() => {
+      btn.textContent = '⬇ Baixar PDF';
+      btn.disabled = false;
+    });
+  }
+
+  // Enter key to add trip
+  ['trip-origin','trip-dest','trip-price','trip-qty','trip-date-start','trip-date-end'].forEach(id => {
+    document.getElementById(id).addEventListener('keydown', e => {
+      if (e.key === 'Enter') addTrip();
+    });
+  });
+</script>
+</body>
+</html>
