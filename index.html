@@ -1,1003 +1,834 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fatura de Táxi</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Mono:wght@300;400;500&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<title>Livro de Bordo — Avaliações de Passageiros</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Roboto+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --black: #0a0a0a;
-    --dark: #111111;
-    --gold: #c9a84c;
-    --gold-light: #e8c97a;
-    --gold-pale: #f5e6c0;
-    --cream: #faf7f0;
-    --gray: #8a8a8a;
-    --gray-light: #d5d0c8;
-    --white: #ffffff;
-  }
-
-  body {
-    background: var(--cream);
-    font-family: 'Lato', sans-serif;
-    color: var(--black);
-    min-height: 100vh;
-    padding: 40px 20px;
-  }
-
-  /* ── FORM PAGE ── */
-  #form-page {
-    max-width: 680px;
-    margin: 0 auto;
-    animation: fadeUp 0.6s ease both;
-  }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .form-header {
-    text-align: center;
-    margin-bottom: 48px;
-  }
-
-  .form-header .taxi-icon {
-    font-size: 48px;
-    display: block;
-    margin-bottom: 12px;
-  }
-
-  .form-header h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.6rem;
-    font-weight: 900;
-    color: var(--black);
-    letter-spacing: -1px;
-    line-height: 1.1;
-  }
-
-  .form-header h1 span {
-    color: var(--gold);
-  }
-
-  .form-header p {
-    margin-top: 10px;
-    color: var(--gray);
-    font-size: 0.95rem;
-    font-weight: 300;
-    letter-spacing: 0.5px;
-  }
-
-  /* ── CARD ── */
-  .card {
-    background: var(--white);
-    border: 1px solid var(--gray-light);
-    border-radius: 2px;
-    padding: 36px 40px;
-    box-shadow: 0 4px 32px rgba(0,0,0,0.06);
-    margin-bottom: 20px;
-  }
-
-  .card-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--gold);
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .card-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--gold-pale);
-  }
-
-  /* ── FORM FIELDS ── */
-  .field-group {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 18px;
-    margin-bottom: 18px;
-  }
-
-  .field-group.single { grid-template-columns: 1fr; }
-  .field-group.three  { grid-template-columns: 1fr 1fr; }
-
-  .field {
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-  }
-
-  .field label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--gray);
-  }
-
-  .field input {
-    border: 1px solid var(--gray-light);
-    border-radius: 2px;
-    padding: 11px 14px;
-    font-family: 'Lato', sans-serif;
-    font-size: 0.95rem;
-    color: var(--black);
-    background: var(--cream);
-    transition: border-color 0.2s, background 0.2s;
-    outline: none;
-  }
-
-  .field input:focus {
-    border-color: var(--gold);
-    background: var(--white);
-  }
-
-  .field input::placeholder { color: var(--gray-light); }
-
-  /* ── VIAGENS LIST ── */
-  #viagens-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .viagem-item {
-    background: var(--cream);
-    border: 1px solid var(--gray-light);
-    border-radius: 2px;
-    padding: 14px 16px;
-    display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
-    gap: 12px;
-    align-items: center;
-    animation: fadeUp 0.3s ease both;
-  }
-
-  .v-qty-badge {
-    display: inline-block;
-    background: var(--black);
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 2px;
-    letter-spacing: 1px;
-    margin-top: 4px;
-  }
-
-  .v-daterange {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--gray);
-    margin-top: 3px;
-    display: block;
-  }
-
-  .viagem-item span {
-    font-size: 0.9rem;
-    color: var(--black);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .viagem-item .v-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.62rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--gray);
-    display: block;
-    margin-bottom: 2px;
-  }
-
-  .viagem-item .v-price {
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    color: var(--gold);
-  }
-
-  .btn-remove {
-    background: none;
-    border: 1px solid var(--gray-light);
-    border-radius: 2px;
-    width: 30px;
-    height: 30px;
-    cursor: pointer;
-    color: var(--gray);
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-
-  .btn-remove:hover { border-color: #e05555; color: #e05555; }
-
-  .empty-viagens {
-    text-align: center;
-    padding: 24px;
-    color: var(--gray-light);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    letter-spacing: 1px;
-    border: 1px dashed var(--gray-light);
-    border-radius: 2px;
-  }
-
-  /* ── BUTTONS ── */
-  .btn-add {
-    width: 100%;
-    padding: 12px;
-    background: none;
-    border: 1.5px dashed var(--gold);
-    border-radius: 2px;
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 0;
-  }
-
-  .btn-add:hover { background: var(--gold-pale); }
-
-  .btn-primary {
-    width: 100%;
-    padding: 16px;
-    background: var(--black);
-    border: none;
-    border-radius: 2px;
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.8rem;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-top: 24px;
-  }
-
-  .btn-primary:hover { background: var(--dark); letter-spacing: 4px; }
-
-  .no-trips-msg {
-    display: none;
-    text-align: center;
-    padding: 10px;
-    color: #e05555;
-    font-family: 'DM Mono', monospace;
-    font-size: 0.75rem;
-    letter-spacing: 1px;
-  }
-
-  /* ═══════════════════════════════════════
-     INVOICE PAGE
-  ═══════════════════════════════════════ */
-  #invoice-page {
-    display: none;
-    max-width: 760px;
-    margin: 0 auto;
-    animation: fadeUp 0.5s ease both;
-  }
-
-  .inv-controls {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 28px;
-    justify-content: flex-end;
-  }
-
-  .btn-back {
-    padding: 11px 22px;
-    background: none;
-    border: 1.5px solid var(--gray-light);
-    border-radius: 2px;
-    color: var(--gray);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-
-  .btn-back:hover { border-color: var(--black); color: var(--black); }
-
-  .btn-pdf {
-    padding: 11px 28px;
-    background: var(--black);
-    border: none;
-    border-radius: 2px;
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .btn-pdf:hover { background: #222; }
-
-  /* ── INVOICE DOCUMENT ── */
-  #invoice-doc {
-    background: var(--white);
-    border: 1px solid var(--gray-light);
-    box-shadow: 0 8px 60px rgba(0,0,0,0.10);
-  }
-
-  .inv-top-bar {
-    background: var(--black);
-    padding: 36px 50px;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-  }
-
-  .inv-company h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    font-weight: 900;
-    color: var(--white);
-    letter-spacing: -0.5px;
-  }
-
-  .inv-company h2 span { color: var(--gold); }
-
-  .inv-company p {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--gray);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    margin-top: 4px;
-  }
-
-  .inv-badge {
-    text-align: right;
-  }
-
-  .inv-badge .label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--gray);
-    letter-spacing: 3px;
-    text-transform: uppercase;
-  }
-
-  .inv-badge .number {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
-    color: var(--gold);
-    font-weight: 700;
-    display: block;
-    margin-top: 2px;
-  }
-
-  .inv-badge .date {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.72rem;
-    color: var(--gray-light);
-    margin-top: 4px;
-    display: block;
-  }
-
-  /* ── PASSENGER SECTION ── */
-  .inv-meta {
-    padding: 32px 50px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
-    border-bottom: 1px solid var(--gold-pale);
-    background: linear-gradient(to bottom, #f8f4ec, var(--white));
-  }
-
-  .inv-meta-block .meta-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 2.5px;
-    color: var(--gold);
-    margin-bottom: 6px;
-  }
-
-  .inv-meta-block .meta-value {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--black);
-  }
-
-  .inv-meta-block .meta-sub {
-    font-size: 0.85rem;
-    color: var(--gray);
-    margin-top: 3px;
-    font-weight: 300;
-  }
-
-  /* ── TABLE ── */
-  .inv-table-wrap {
-    padding: 36px 50px;
-  }
-
-  .inv-table-title {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.68rem;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    color: var(--gold);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .inv-table-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--gold-pale);
-  }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  thead tr {
-    border-bottom: 2px solid var(--black);
-  }
-
-  thead th {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--gray);
-    padding: 10px 12px;
-    text-align: left;
-    font-weight: 500;
-  }
-
-  thead th:last-child { text-align: right; }
-
-  tbody tr {
-    border-bottom: 1px solid var(--gold-pale);
-    transition: background 0.15s;
-  }
-
-  tbody tr:hover { background: #fdf9f2; }
-
-  tbody td {
-    padding: 14px 12px;
-    font-size: 0.92rem;
-    color: var(--black);
-    vertical-align: middle;
-  }
-
-  tbody td:last-child {
-    text-align: right;
-    font-family: 'DM Mono', monospace;
-    font-weight: 500;
-    color: var(--black);
-  }
-
-  .td-route {
-    font-size: 0.8rem;
-    color: var(--gray);
-  }
-
-  .td-num {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.78rem;
-    color: var(--gray);
-    text-align: center;
-  }
-
-  /* ── TOTALS ── */
-  .inv-totals {
-    padding: 0 50px 40px;
-    display: flex;
-    justify-content: flex-end;
-  }
-
-  .totals-box {
-    width: 280px;
-  }
-
-  .total-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--gold-pale);
-  }
-
-  .total-row .t-label {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    color: var(--gray);
-  }
-
-  .total-row .t-val {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.9rem;
-    color: var(--black);
-  }
-
-  .total-row.grand {
-    border-bottom: none;
-    margin-top: 6px;
-    padding-top: 14px;
-    border-top: 2px solid var(--black);
-  }
-
-  .total-row.grand .t-label {
-    font-family: 'Playfair Display', serif;
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--black);
-    text-transform: none;
-    letter-spacing: 0;
-  }
-
-  .total-row.grand .t-val {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    font-weight: 900;
-    color: var(--gold);
-  }
-
-  /* ── FOOTER ── */
-  .inv-footer {
-    background: var(--black);
-    padding: 24px 50px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .inv-footer p {
-    font-family: 'DM Mono', monospace;
-    font-size: 0.65rem;
-    color: var(--gray);
-    letter-spacing: 1.5px;
-  }
-
-  .inv-footer .thank {
-    font-family: 'Playfair Display', serif;
-    font-size: 0.9rem;
-    color: var(--gold-light);
-    font-style: italic;
-  }
-
-  /* ── DECORATIVE STRIPE ── */
-  .gold-stripe {
-    height: 4px;
-    background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
-  }
-
-  /* ── RESPONSIVE ── */
-  @media (max-width: 600px) {
-    .field-group { grid-template-columns: 1fr; }
-    .viagem-item { grid-template-columns: 1fr 1fr; }
-    .viagem-item .v-col-dest { display: none; }
-    .inv-top-bar { flex-direction: column; gap: 16px; }
-    .inv-meta { grid-template-columns: 1fr; }
-    .inv-top-bar, .inv-meta, .inv-table-wrap, .inv-totals, .inv-footer { padding-left: 24px; padding-right: 24px; }
-    .inv-badge { text-align: left; }
-    .inv-footer { flex-direction: column; gap: 8px; text-align: center; }
-  }
-
-  @media print {
-    .inv-controls { display: none; }
-    body { padding: 0; background: white; }
+  :root{
+    --asphalt:#17181C;
+    --amber:#FFB800;
+    --amber-dim:#8a6400;
+    --paper:#F6F1E4;
+    --paper-dark:#EDE6D3;
+    --ink:#2B2A28;
+    --ink-soft:#6b6558;
+    --meter-red:#D64545;
+    --route-green:#3C8A5D;
+    --line:#d9d0b8;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:var(--amber);color:var(--asphalt);}
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:var(--asphalt);
+    color:var(--paper);
+    padding:28px 20px 22px;
+    position:relative;
+    overflow:hidden;
+    border-bottom:6px solid var(--amber);
+  }
+  header::before{
+    content:"";
+    position:absolute;
+    top:0;left:0;right:0;height:100%;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,184,0,0.05) 0 12px, transparent 12px 24px);
+    pointer-events:none;
+  }
+  .header-inner{
+    max-width:720px;
+    margin:0 auto;
+    position:relative;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:16px;
+  }
+  .brand-eyebrow{
+    font-family:'Roboto Mono',monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--amber);
+    text-transform:uppercase;
+    margin:0 0 6px;
+  }
+  h1{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(28px,6vw,40px);
+    letter-spacing:.01em;
+    margin:0;
+    line-height:1;
+  }
+  .brand-sub{
+    font-size:13px;
+    color:#c9c4b6;
+    margin:8px 0 0;
+    max-width:340px;
+  }
+  .meter-stats{
+    display:flex;
+    gap:14px;
+  }
+  .meter-box{
+    background:#0e0f12;
+    border:1px solid #333;
+    border-radius:4px;
+    padding:10px 16px;
+    text-align:center;
+    min-width:92px;
+  }
+  .meter-box .val{
+    font-family:'Roboto Mono',monospace;
+    font-size:22px;
+    font-weight:700;
+    color:var(--amber);
+    letter-spacing:.03em;
+  }
+  .meter-box .lbl{
+    font-family:'Roboto Mono',monospace;
+    font-size:9px;
+    letter-spacing:.12em;
+    color:#8f8a7c;
+    text-transform:uppercase;
+    margin-top:2px;
+  }
+
+  /* ---------- MAIN ---------- */
+  main{
+    max-width:720px;
+    margin:0 auto;
+    padding:22px 20px 80px;
+  }
+
+  /* search / meter keypad */
+  .search-panel{
+    background:var(--asphalt);
+    border-radius:8px;
+    padding:14px;
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:18px;
+  }
+  .search-panel label{
+    display:none;
+  }
+  .search-panel .hash{
+    font-family:'Roboto Mono',monospace;
+    color:var(--amber);
+    font-weight:700;
+    font-size:15px;
+    padding-left:6px;
+  }
+  .search-panel input{
+    flex:1;
+    background:transparent;
+    border:none;
+    outline:none;
+    font-family:'Roboto Mono',monospace;
+    font-size:16px;
+    letter-spacing:.05em;
+    color:var(--paper);
+    padding:8px 4px;
+  }
+  .search-panel input::placeholder{color:#6f6a5c;}
+  .search-panel button{
+    background:var(--amber);
+    border:none;
+    color:var(--asphalt);
+    font-family:'Roboto Mono',monospace;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:.08em;
+    padding:10px 14px;
+    border-radius:5px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .search-panel button:hover{background:#ffc531;}
+  .search-panel .clear-btn{
+    background:transparent;
+    color:#9b9686;
+    border:1px solid #3a3a3a;
+  }
+  .search-panel .clear-btn:hover{color:var(--paper);border-color:#666;}
+
+  .search-summary{
+    display:none;
+    background:var(--paper-dark);
+    border:1px dashed var(--line);
+    border-radius:8px;
+    padding:12px 16px;
+    margin:-6px 0 18px;
+    font-family:'Roboto Mono',monospace;
+    font-size:13px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .search-summary.active{display:flex;}
+  .search-summary .stars-mini{color:var(--amber);letter-spacing:2px;}
+
+  /* new review toggle + form */
+  .new-toggle{
+    width:100%;
+    background:var(--ink);
+    color:var(--paper);
+    border:none;
+    border-radius:8px;
+    padding:13px;
+    font-family:'Archivo Black',sans-serif;
+    font-size:13px;
+    letter-spacing:.05em;
+    cursor:pointer;
+    margin-bottom:18px;
+  }
+  .new-toggle:hover{background:#3a382f;}
+
+  .new-form{
+    display:none;
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px;
+    margin-bottom:24px;
+  }
+  .new-form.open{display:block;}
+  .form-row{margin-bottom:14px;}
+  .form-row label{
+    display:block;
+    font-family:'Roboto Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .form-row input[type="text"],
+  .form-row input[type="number"],
+  .form-row textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:10px 12px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    background:var(--paper);
+    color:var(--ink);
+    resize:none;
+  }
+  .form-row input:focus,
+  .form-row textarea:focus{
+    outline:none;
+    border-color:var(--amber-dim);
+    background:#fffdf7;
+  }
+  .star-picker{display:flex;gap:6px;}
+  .star-picker button{
+    background:none;
+    border:none;
+    font-size:28px;
+    cursor:pointer;
+    color:var(--line);
+    line-height:1;
+    padding:2px;
+  }
+  .star-picker button.filled{color:var(--amber);}
+  .char-counter{
+    text-align:right;
+    font-family:'Roboto Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .char-counter.warn{color:var(--meter-red);}
+  .form-actions{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+  }
+  .btn-cancel{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-soft);
+    padding:10px 16px;
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-submit{
+    background:var(--amber);
+    border:none;
+    color:var(--asphalt);
+    font-weight:700;
+    padding:10px 18px;
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    cursor:pointer;
+  }
+  .btn-submit:disabled{opacity:.4;cursor:not-allowed;}
+  .btn-submit:not(:disabled):hover{background:#ffc531;}
+  .form-error{
+    font-family:'Roboto Mono',monospace;
+    font-size:11.5px;
+    color:var(--meter-red);
+    margin-bottom:10px;
+    display:none;
+  }
+  .form-error.show{display:block;}
+
+  /* feed */
+  .feed-label{
+    font-family:'Roboto Mono',monospace;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 12px 2px;
+  }
+  .feed{display:flex;flex-direction:column;gap:16px;}
+
+  .ticket{
+    position:relative;
+    background:#fff;
+    border-radius:6px;
+    box-shadow:0 1px 3px rgba(23,24,28,0.08), 0 1px 1px rgba(23,24,28,0.06);
+  }
+  .ticket-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:14px 18px 12px;
+    gap:12px;
+  }
+  .passenger-id{
+    font-family:'Roboto Mono',monospace;
+    font-weight:700;
+    font-size:19px;
+    letter-spacing:.02em;
+  }
+  .passenger-id span{
+    color:var(--ink-soft);
+    font-weight:400;
+    font-size:12px;
+    display:block;
+    margin-top:2px;
+  }
+  .ticket-date{
+    font-family:'Roboto Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    text-align:right;
+    white-space:nowrap;
+    padding-top:2px;
+  }
+  .stars-row{
+    padding:0 18px 12px;
+    color:var(--amber);
+    font-size:17px;
+    letter-spacing:2px;
+  }
+  .stars-row .num{
+    font-family:'Roboto Mono',monospace;
+    color:var(--ink-soft);
+    font-size:11px;
+    margin-left:8px;
+    letter-spacing:0;
+  }
+
+  /* perforated divider */
+  .perf{
+    position:relative;
+    height:0;
+    border-top:2px dashed var(--line);
+    margin:0 -1px;
+  }
+  .perf::before,.perf::after{
+    content:"";
+    position:absolute;
+    top:-9px;
+    width:18px;height:18px;
+    border-radius:50%;
+    background:var(--paper);
+  }
+  .perf::before{left:-9px;}
+  .perf::after{right:-9px;}
+
+  .ticket-body{
+    padding:14px 18px 16px;
+  }
+  .comment{
+    font-size:14.5px;
+    line-height:1.5;
+    color:var(--ink);
+    margin:0 0 10px;
+  }
+  .comment.empty{
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+  .ticket-footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .driver-chip{
+    font-family:'Roboto Mono',monospace;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    background:var(--paper-dark);
+    color:var(--ink-soft);
+    padding:4px 10px;
+    border-radius:20px;
+    text-transform:uppercase;
+  }
+  .rating-tag{
+    font-family:'Roboto Mono',monospace;
+    font-size:10.5px;
+    font-weight:700;
+    padding:4px 10px;
+    border-radius:20px;
+    letter-spacing:.04em;
+  }
+  .rating-tag.good{background:rgba(60,138,93,0.12);color:var(--route-green);}
+  .rating-tag.mid{background:rgba(255,184,0,0.15);color:var(--amber-dim);}
+  .rating-tag.bad{background:rgba(214,69,69,0.12);color:var(--meter-red);}
+
+  .empty-state{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--ink-soft);
+  }
+  .empty-state .big{
+    font-family:'Archivo Black',sans-serif;
+    font-size:18px;
+    color:var(--ink);
+    margin-bottom:6px;
+  }
+  .empty-state .small{
+    font-family:'Roboto Mono',monospace;
+    font-size:12px;
+  }
+
+  .config-banner{
+    background:#fff4d6;
+    border:1px solid var(--amber-dim);
+    color:#5c4600;
+    border-radius:8px;
+    padding:14px 16px;
+    font-family:'Roboto Mono',monospace;
+    font-size:12px;
+    line-height:1.6;
+    margin-bottom:18px;
+  }
+  .config-banner code{
+    background:#00000010;
+    padding:1px 5px;
+    border-radius:3px;
+  }
+  .loading-msg{
+    text-align:center;
+    padding:40px;
+    font-family:'Roboto Mono',monospace;
+    color:var(--ink-soft);
+    font-size:12px;
+    letter-spacing:.08em;
+  }
+
+  @media (prefers-reduced-motion: no-preference){
+    .new-form.open{animation:slideDown .18s ease;}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:translateY(0);}}
+    .ticket{animation:fadeIn .25s ease;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  }
+
+  button:focus-visible, input:focus-visible, textarea:focus-visible{
+    outline:2px solid var(--amber-dim);
+    outline-offset:2px;
   }
 </style>
 </head>
 <body>
 
-<!-- ══════════════ FORM PAGE ══════════════ -->
-<div id="form-page">
-  <div class="form-header">
-    <span class="taxi-icon">🚖</span>
-    <h1>Fatura de <span>Táxi</span></h1>
-    <p>Preencha os dados e gere o recibo profissional</p>
-  </div>
-
-  <!-- Dados do Passageiro -->
-  <div class="card">
-    <div class="card-title">Dados do Passageiro</div>
-    <div class="field-group single">
-      <div class="field">
-        <label>Nome do Passageiro</label>
-        <input type="text" id="passenger-name" placeholder="Ex: João da Silva" />
-      </div>
+<header>
+  <div class="header-inner">
+    <div>
+      <p class="brand-eyebrow">Uso interno &middot; classe táxi</p>
+      <h1>LIVRO DE&nbsp;BORDO</h1>
+      <p class="brand-sub">Registro de avaliações de passageiros feitas por taxistas ao fim de cada corrida.</p>
     </div>
-    <div class="field-group">
-      <div class="field">
-        <label>Empresa / Referência</label>
-        <input type="text" id="passenger-company" placeholder="Opcional" />
+    <div class="meter-stats">
+      <div class="meter-box">
+        <div class="val" id="statTotal">--</div>
+        <div class="lbl">Corridas</div>
       </div>
-      <div class="field">
-        <label>Contacto</label>
-        <input type="text" id="passenger-contact" placeholder="Ex: +258 84 000 0000" />
+      <div class="meter-box">
+        <div class="val" id="statAvg">--</div>
+        <div class="lbl">Média geral</div>
       </div>
     </div>
   </div>
+</header>
 
-  <!-- Viagens -->
-  <div class="card">
-    <div class="card-title">Viagens Realizadas</div>
+<main>
 
-    <!-- Campos de nova viagem -->
-    <div class="field-group">
-      <div class="field">
-        <label>Local de Partida</label>
-        <input type="text" id="trip-origin" placeholder="Ex: Aeroporto Internacional" />
-      </div>
-      <div class="field">
-        <label>Destino</label>
-        <input type="text" id="trip-dest" placeholder="Ex: Hotel Polana" />
+  <div class="config-banner" id="configBanner" style="display:none;"></div>
+
+  <div class="search-panel">
+    <span class="hash">Nº</span>
+    <input type="text" id="searchInput" inputmode="numeric" placeholder="Buscar por número do passageiro (ex: 4521)">
+    <button class="clear-btn" id="clearBtn" style="display:none;">Limpar</button>
+    <button id="searchBtn">Buscar</button>
+  </div>
+
+  <div class="search-summary" id="searchSummary"></div>
+
+  <button class="new-toggle" id="toggleForm">+ REGISTRAR NOVA AVALIAÇÃO</button>
+
+  <div class="new-form" id="newForm">
+    <div class="form-error" id="formError"></div>
+    <div class="form-row">
+      <label for="fPassenger">Número do passageiro</label>
+      <input type="text" id="fPassenger" inputmode="numeric" placeholder="Ex: 4521">
+    </div>
+    <div class="form-row">
+      <label>Avaliação</label>
+      <div class="star-picker" id="starPicker">
+        <button type="button" data-v="1">★</button>
+        <button type="button" data-v="2">★</button>
+        <button type="button" data-v="3">★</button>
+        <button type="button" data-v="4">★</button>
+        <button type="button" data-v="5">★</button>
       </div>
     </div>
-    <div class="field-group three">
-      <div class="field">
-        <label>Preço Unit. (MZN)</label>
-        <input type="number" id="trip-price" placeholder="Ex: 350" min="0" step="0.01" />
-      </div>
-      <div class="field">
-        <label>Qtd. de Viagens</label>
-        <input type="number" id="trip-qty" placeholder="Ex: 5" min="1" step="1" value="1" />
-      </div>
+    <div class="form-row">
+      <label for="fComment">Comentário (opcional)</label>
+      <textarea id="fComment" rows="3" maxlength="180" placeholder="Ex: Passageiro pontual, corrida tranquila."></textarea>
+      <div class="char-counter" id="charCounter">0 / 180</div>
     </div>
-    <div class="field-group">
-      <div class="field">
-        <label>Data de Início</label>
-        <input type="date" id="trip-date-start" />
-      </div>
-      <div class="field">
-        <label>Data de Fim</label>
-        <input type="date" id="trip-date-end" />
-      </div>
+    <div class="form-row">
+      <label for="fDriver">Seu nome (opcional)</label>
+      <input type="text" id="fDriver" placeholder="Ex: Carlos M.">
     </div>
-
-    <button class="btn-add" onclick="addTrip()">＋ Adicionar Viagem</button>
-
-    <p class="no-trips-msg" id="no-trips-msg">Adicione pelo menos uma viagem antes de gerar a fatura.</p>
-
-    <div style="margin-top: 20px;">
-      <div id="viagens-list">
-        <div class="empty-viagens" id="empty-placeholder">Nenhuma viagem adicionada ainda</div>
-      </div>
+    <div class="form-actions">
+      <button class="btn-cancel" id="cancelForm">Cancelar</button>
+      <button class="btn-submit" id="submitForm" disabled>Registrar corrida</button>
     </div>
   </div>
 
-  <button class="btn-primary" onclick="generateInvoice()">✦ Gerar Fatura</button>
-</div>
-
-<!-- ══════════════ INVOICE PAGE ══════════════ -->
-<div id="invoice-page">
-  <div class="inv-controls">
-    <button class="btn-back" onclick="goBack()">← Editar</button>
-    <button class="btn-pdf" onclick="downloadPDF()">⬇ Baixar PDF</button>
+  <p class="feed-label" id="feedLabel">Corridas registradas</p>
+  <div class="feed" id="feed">
+    <div class="loading-msg">Carregando registros…</div>
   </div>
 
-  <div id="invoice-doc">
-    <div class="gold-stripe"></div>
-
-    <!-- Header -->
-    <div class="inv-top-bar">
-      <div class="inv-company">
-        <h2>Táxi<span>Premium</span></h2>
-        <p>Serviço de Transporte Executivo</p>
-      </div>
-      <div class="inv-badge">
-        <span class="label">Fatura Nº</span>
-        <span class="number" id="inv-number">—</span>
-        <span class="date" id="inv-date">—</span>
-      </div>
-    </div>
-
-    <!-- Meta -->
-    <div class="inv-meta">
-      <div class="inv-meta-block">
-        <div class="meta-label">Passageiro</div>
-        <div class="meta-value" id="inv-passenger">—</div>
-        <div class="meta-sub" id="inv-company">—</div>
-      </div>
-      <div class="inv-meta-block">
-        <div class="meta-label">Contacto</div>
-        <div class="meta-value" id="inv-contact">—</div>
-        <div class="meta-sub" id="inv-period">—</div>
-      </div>
-    </div>
-
-    <!-- Table -->
-    <div class="inv-table-wrap">
-      <div class="inv-table-title">Detalhes das Viagens</div>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Período</th>
-            <th>Origem → Destino</th>
-            <th style="text-align:center">Qtd.</th>
-            <th style="text-align:right">Unit.</th>
-            <th style="text-align:right">Subtotal</th>
-          </tr>
-        </thead>
-        <tbody id="inv-tbody">
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Totals -->
-    <div class="inv-totals">
-      <div class="totals-box">
-        <div class="total-row">
-          <span class="t-label">Nº de Viagens</span>
-          <span class="t-val" id="inv-count">0</span>
-        </div>
-        <div class="total-row">
-          <span class="t-label">Subtotal</span>
-          <span class="t-val" id="inv-subtotal">0,00 MZN</span>
-        </div>
-        <div class="total-row grand">
-          <span class="t-label">Total a Pagar</span>
-          <span class="t-val" id="inv-total">0,00 MZN</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="inv-footer">
-      <p>Táxi Premium · Maputo, Moçambique</p>
-      <span class="thank">Obrigado pela preferência!</span>
-    </div>
-    <div class="gold-stripe"></div>
-  </div>
-</div>
+</main>
 
 <script>
-  // ── STATE ──
-  let trips = [];
-  let invoiceCounter = Math.floor(1000 + Math.random() * 8000);
+(function(){
 
-  // Default dates: today as end, 7 days ago as start
-  const today = new Date();
-  const weekAgo = new Date(); weekAgo.setDate(today.getDate() - 6);
-  document.getElementById('trip-date-start').valueAsDate = weekAgo;
-  document.getElementById('trip-date-end').valueAsDate   = today;
+  // ============================================================
+  // CONFIGURAÇÃO DO SUPABASE — preencha com os dados do seu projeto
+  // 1. Crie um projeto em https://supabase.com
+  // 2. Vá em Project Settings > API
+  // 3. Copie "Project URL" e "anon public key" para as duas linhas abaixo
+  // ============================================================
+  const SUPABASE_URL = "https://SEU-PROJETO.supabase.co";
+  const SUPABASE_ANON_KEY = "SUA-CHAVE-ANON-AQUI";
+  // ============================================================
 
-  // ── ADD TRIP ──
-  function addTrip() {
-    const origin    = document.getElementById('trip-origin').value.trim();
-    const dest      = document.getElementById('trip-dest').value.trim();
-    const price     = parseFloat(document.getElementById('trip-price').value);
-    const qty       = parseInt(document.getElementById('trip-qty').value) || 1;
-    const dateStart = document.getElementById('trip-date-start').value;
-    const dateEnd   = document.getElementById('trip-date-end').value;
+  const isConfigured = !SUPABASE_URL.includes('SEU-PROJETO') && !SUPABASE_ANON_KEY.includes('SUA-CHAVE');
+  const supabaseClient = isConfigured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
-    const invalid = [];
-    if (!origin) invalid.push('trip-origin');
-    if (!dest)   invalid.push('trip-dest');
-    if (isNaN(price) || price <= 0) invalid.push('trip-price');
-    if (qty < 1)  invalid.push('trip-qty');
+  let reviews = [];
+  let currentSearch = "";
+  let selectedStars = 0;
 
-    if (invalid.length) { highlightFields(invalid); return; }
+  const configBanner = document.getElementById('configBanner');
+  const feedEl = document.getElementById('feed');
+  const feedLabel = document.getElementById('feedLabel');
+  const statTotal = document.getElementById('statTotal');
+  const statAvg = document.getElementById('statAvg');
+  const searchInput = document.getElementById('searchInput');
+  const clearBtn = document.getElementById('clearBtn');
+  const searchSummary = document.getElementById('searchSummary');
+  const toggleForm = document.getElementById('toggleForm');
+  const newForm = document.getElementById('newForm');
+  const cancelForm = document.getElementById('cancelForm');
+  const submitForm = document.getElementById('submitForm');
+  const starPicker = document.getElementById('starPicker');
+  const fPassenger = document.getElementById('fPassenger');
+  const fComment = document.getElementById('fComment');
+  const fDriver = document.getElementById('fDriver');
+  const charCounter = document.getElementById('charCounter');
+  const formError = document.getElementById('formError');
 
-    // Swap dates if end < start
-    let ds = dateStart, de = dateEnd;
-    if (ds && de && ds > de) { [ds, de] = [de, ds]; }
-
-    trips.push({ origin, dest, price, qty, dateStart: ds, dateEnd: de });
-    renderTripList();
-    clearTripFields();
-    document.getElementById('no-trips-msg').style.display = 'none';
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
   }
 
-  function highlightFields(ids) {
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      el.style.borderColor = '#e05555';
-      el.style.background  = '#fff5f5';
-      setTimeout(() => { el.style.borderColor = ''; el.style.background = ''; }, 2000);
-    });
+  function formatDate(iso){
+    const d = new Date(iso);
+    return d.toLocaleDateString('pt-BR', {day:'2-digit', month:'short'}) + ' · ' +
+           d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
   }
 
-  function clearTripFields() {
-    document.getElementById('trip-origin').value = '';
-    document.getElementById('trip-dest').value   = '';
-    document.getElementById('trip-price').value  = '';
-    document.getElementById('trip-qty').value    = '1';
-    // keep date range as-is for convenience
-    document.getElementById('trip-origin').focus();
+  function starsToStr(n){
+    return '★★★★★☆☆☆☆☆'.slice(5-n, 10-n);
   }
 
-  function removeTrip(index) {
-    trips.splice(index, 1);
-    renderTripList();
+  function ratingClass(n){
+    if(n >= 4) return 'good';
+    if(n >= 3) return 'mid';
+    return 'bad';
   }
 
-  function renderTripList() {
-    const list = document.getElementById('viagens-list');
+  function showConfigBanner(msg){
+    configBanner.style.display = 'block';
+    configBanner.innerHTML = msg;
+  }
 
-    if (trips.length === 0) {
-      list.innerHTML = '<div class="empty-viagens" id="empty-placeholder">Nenhuma viagem adicionada ainda</div>';
+  async function loadReviews(){
+    if(!isConfigured){
+      showConfigBanner(
+        'Banco ainda não configurado. Edite as constantes <code>SUPABASE_URL</code> e ' +
+        '<code>SUPABASE_ANON_KEY</code> no início do &lt;script&gt; deste arquivo com os dados ' +
+        'do seu projeto Supabase. Veja as instruções de configuração enviadas junto com este arquivo.'
+      );
+      feedEl.innerHTML = '<div class="empty-state"><div class="big">Banco não conectado</div><div class="small">CONFIGURE O SUPABASE PARA COMEÇAR A REGISTRAR CORRIDAS</div></div>';
+      statTotal.textContent = '--';
+      statAvg.textContent = '--';
+      return;
+    }
+    try{
+      const { data, error } = await supabaseClient
+        .from('reviews')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+      reviews = (data || []).map(r => ({
+        id: r.id,
+        passenger: r.passenger,
+        stars: r.stars,
+        comment: r.comment || '',
+        driver: r.driver || '',
+        date: r.created_at
+      }));
+      render();
+    }catch(e){
+      console.error(e);
+      showConfigBanner(
+        'Não foi possível conectar ao banco. Confira se a URL e a chave anon estão corretas, ' +
+        'e se a tabela <code>reviews</code> existe com as permissões (RLS) liberadas. Detalhe: ' +
+        escapeHtml(e.message || String(e))
+      );
+    }
+  }
+
+  async function insertReview(entry){
+    const { data, error } = await supabaseClient
+      .from('reviews')
+      .insert([{
+        passenger: entry.passenger,
+        stars: entry.stars,
+        comment: entry.comment,
+        driver: entry.driver
+      }])
+      .select();
+    if(error) throw error;
+    return data[0];
+  }
+
+  function render(){
+    // stats
+    statTotal.textContent = reviews.length;
+    if(reviews.length){
+      const avg = reviews.reduce((s,r)=>s+r.stars,0) / reviews.length;
+      statAvg.textContent = avg.toFixed(1);
+    } else {
+      statAvg.textContent = '—';
+    }
+
+    // filter
+    let list = reviews;
+    if(currentSearch){
+      list = reviews.filter(r => r.passenger.includes(currentSearch));
+    }
+    list = [...list].sort((a,b)=> new Date(b.date) - new Date(a.date));
+
+    // summary block for search
+    if(currentSearch && list.length){
+      const avg = (list.reduce((s,r)=>s+r.stars,0) / list.length).toFixed(1);
+      searchSummary.classList.add('active');
+      searchSummary.innerHTML =
+        `<span>Passageiro <strong>#${escapeHtml(currentSearch)}</strong> — ${list.length} corrida${list.length>1?'s':''} avaliada${list.length>1?'s':''}</span>` +
+        `<span class="stars-mini">${starsToStr(Math.round(avg))} <span style="color:var(--ink-soft);letter-spacing:0;">média ${avg}</span></span>`;
+      feedLabel.textContent = `Resultados para "${currentSearch}"`;
+    } else if(currentSearch){
+      searchSummary.classList.remove('active');
+      feedLabel.textContent = `Resultados para "${currentSearch}"`;
+    } else {
+      searchSummary.classList.remove('active');
+      feedLabel.textContent = 'Corridas registradas';
+    }
+
+    // feed
+    if(!list.length){
+      feedEl.innerHTML = currentSearch
+        ? `<div class="empty-state"><div class="big">Nenhum passageiro encontrado</div><div class="small">NENHUM REGISTRO PARA O Nº "${escapeHtml(currentSearch)}"</div></div>`
+        : `<div class="empty-state"><div class="big">Nenhuma corrida registrada ainda</div><div class="small">TOQUE EM "REGISTRAR NOVA AVALIAÇÃO" PARA COMEÇAR</div></div>`;
       return;
     }
 
-    list.innerHTML = '';
-    trips.forEach((t, i) => {
-      const subtotal  = t.price * t.qty;
-      const rangeText = buildRangeLabel(t.dateStart, t.dateEnd, t.qty);
-      const item = document.createElement('div');
-      item.className = 'viagem-item';
-      item.innerHTML = `
-        <div>
-          <span class="v-label">Rota</span>
-          <span style="font-weight:600">${t.origin}</span>
-          <span class="v-daterange">→ ${t.dest}</span>
-          <span class="v-daterange">${rangeText}</span>
+    feedEl.innerHTML = list.map(r => `
+      <div class="ticket">
+        <div class="ticket-top">
+          <div class="passenger-id">Nº ${escapeHtml(r.passenger)}<span>Passageiro</span></div>
+          <div class="ticket-date">${formatDate(r.date)}</div>
         </div>
-        <div>
-          <span class="v-label">Qtd.</span>
-          <span class="v-qty-badge">× ${t.qty}</span>
+        <div class="stars-row">${starsToStr(r.stars)}<span class="num">${r.stars}/5</span></div>
+        <div class="perf"></div>
+        <div class="ticket-body">
+          <p class="comment ${r.comment ? '' : 'empty'}">${r.comment ? escapeHtml(r.comment) : 'Sem comentário.'}</p>
+          <div class="ticket-footer">
+            <span class="driver-chip">${r.driver ? escapeHtml(r.driver) : 'Motorista não identificado'}</span>
+            <span class="rating-tag ${ratingClass(r.stars)}">${r.stars >= 4 ? 'BOM PASSAGEIRO' : r.stars >= 3 ? 'REGULAR' : 'ATENÇÃO'}</span>
+          </div>
         </div>
-        <div>
-          <span class="v-label">Subtotal</span>
-          <span class="v-price">${formatMZN(subtotal)}</span>
-          <span class="v-daterange">${formatMZN(t.price)}/viagem</span>
-        </div>
-        <button class="btn-remove" onclick="removeTrip(${i})" title="Remover">✕</button>
-      `;
-      list.appendChild(item);
+      </div>
+    `).join('');
+  }
+
+  // search
+  function doSearch(){
+    currentSearch = searchInput.value.trim();
+    clearBtn.style.display = currentSearch ? 'inline-block' : 'none';
+    render();
+  }
+  document.getElementById('searchBtn').addEventListener('click', doSearch);
+  searchInput.addEventListener('keydown', e => { if(e.key === 'Enter') doSearch(); });
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    currentSearch = '';
+    clearBtn.style.display = 'none';
+    render();
+  });
+
+  // toggle form
+  toggleForm.addEventListener('click', () => {
+    newForm.classList.add('open');
+    toggleForm.style.display = 'none';
+  });
+  cancelForm.addEventListener('click', closeForm);
+
+  function closeForm(){
+    newForm.classList.remove('open');
+    toggleForm.style.display = 'block';
+    fPassenger.value = '';
+    fComment.value = '';
+    fDriver.value = '';
+    selectedStars = 0;
+    updateStars();
+    updateCounter();
+    formError.classList.remove('show');
+  }
+
+  // stars
+  starPicker.addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    selectedStars = parseInt(btn.dataset.v, 10);
+    updateStars();
+    validateForm();
+  });
+  function updateStars(){
+    [...starPicker.children].forEach(b => {
+      b.classList.toggle('filled', parseInt(b.dataset.v,10) <= selectedStars);
     });
   }
 
-  function buildRangeLabel(ds, de, qty) {
-    if (!ds && !de) return qty === 1 ? 'Data não definida' : `${qty} viagens`;
-    if (ds === de || !de) return formatDate(ds);
-    return `${formatDate(ds)} – ${formatDate(de)}`;
+  // char counter
+  fComment.addEventListener('input', () => { updateCounter(); validateForm(); });
+  function updateCounter(){
+    const len = fComment.value.length;
+    charCounter.textContent = `${len} / 180`;
+    charCounter.classList.toggle('warn', len >= 160);
+  }
+  fPassenger.addEventListener('input', validateForm);
+
+  function validateForm(){
+    const ok = fPassenger.value.trim().length > 0 && selectedStars > 0;
+    submitForm.disabled = !ok;
+    formError.classList.remove('show');
   }
 
-  // ── FORMAT ──
-  function formatMZN(val) {
-    return val.toLocaleString('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' MZN';
-  }
-
-  function formatDate(str) {
-    if (!str) return '—';
-    const [y, m, d] = str.split('-');
-    return `${d}/${m}/${y}`;
-  }
-
-  function getOverallDateRange() {
-    const allDates = [];
-    trips.forEach(t => {
-      if (t.dateStart) allDates.push(t.dateStart);
-      if (t.dateEnd)   allDates.push(t.dateEnd);
-    });
-    if (!allDates.length) return '';
-    allDates.sort();
-    const first = allDates[0], last = allDates[allDates.length - 1];
-    return first === last ? formatDate(first) : `${formatDate(first)} – ${formatDate(last)}`;
-  }
-
-  // ── GENERATE INVOICE ──
-  function generateInvoice() {
-    const name = document.getElementById('passenger-name').value.trim();
-    if (!name) {
-      highlightFields(['passenger-name']);
-      document.getElementById('passenger-name').focus();
+  submitForm.addEventListener('click', async () => {
+    const passenger = fPassenger.value.trim();
+    if(!passenger || selectedStars === 0){
+      formError.textContent = 'Informe o número do passageiro e selecione uma avaliação.';
+      formError.classList.add('show');
       return;
     }
-    if (trips.length === 0) {
-      document.getElementById('no-trips-msg').style.display = 'block';
+    if(!isConfigured){
+      formError.textContent = 'Configure o Supabase (SUPABASE_URL e SUPABASE_ANON_KEY) antes de registrar corridas.';
+      formError.classList.add('show');
       return;
     }
+    submitForm.disabled = true;
+    submitForm.textContent = 'Registrando…';
 
-    const company  = document.getElementById('passenger-company').value.trim() || '—';
-    const contact  = document.getElementById('passenger-contact').value.trim() || '—';
-    const total    = trips.reduce((s, t) => s + t.price * t.qty, 0);
-    const totalQty = trips.reduce((s, t) => s + t.qty, 0);
-
-    document.getElementById('inv-number').textContent   = '#' + (++invoiceCounter);
-    document.getElementById('inv-date').textContent     = 'Emitido em ' + new Date().toLocaleDateString('pt-MZ');
-    document.getElementById('inv-passenger').textContent = name;
-    document.getElementById('inv-company').textContent  = company;
-    document.getElementById('inv-contact').textContent  = contact;
-    document.getElementById('inv-period').textContent   = 'Período: ' + getOverallDateRange();
-    document.getElementById('inv-count').textContent    = totalQty + (totalQty === 1 ? ' viagem' : ' viagens');
-    document.getElementById('inv-subtotal').textContent = formatMZN(total);
-    document.getElementById('inv-total').textContent    = formatMZN(total);
-
-    // Build table rows
-    const tbody = document.getElementById('inv-tbody');
-    tbody.innerHTML = '';
-    trips.forEach((t, i) => {
-      const subtotal  = t.price * t.qty;
-      const rangeText = buildRangeLabel(t.dateStart, t.dateEnd, t.qty);
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="td-num">${i + 1}</td>
-        <td style="font-family:'DM Mono',monospace;font-size:0.75rem;color:var(--gray);white-space:nowrap">${rangeText}</td>
-        <td>
-          <strong>${t.origin}</strong>
-          <div class="td-route">→ ${t.dest}</div>
-        </td>
-        <td style="text-align:center;font-family:'DM Mono',monospace;font-size:0.85rem;font-weight:600">× ${t.qty}</td>
-        <td style="text-align:right;font-family:'DM Mono',monospace;font-size:0.8rem;color:var(--gray)">${formatMZN(t.price)}</td>
-        <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:600">${formatMZN(subtotal)}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-
-    document.getElementById('form-page').style.display = 'none';
-    document.getElementById('invoice-page').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function goBack() {
-    document.getElementById('invoice-page').style.display = 'none';
-    document.getElementById('form-page').style.display = 'block';
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  // ── PDF DOWNLOAD ──
-  function downloadPDF() {
-    const el   = document.getElementById('invoice-doc');
-    const name = document.getElementById('inv-passenger').textContent.replace(/\s+/g, '_');
-    const num  = document.getElementById('inv-number').textContent.replace('#', '');
-
-    const opt = {
-      margin:      [8, 8, 8, 8],
-      filename:    `Fatura_Taxi_${name}_${num}.pdf`,
-      image:       { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-      jsPDF:       { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    const entry = {
+      passenger: passenger,
+      stars: selectedStars,
+      comment: fComment.value.trim().slice(0,180),
+      driver: fDriver.value.trim()
     };
 
-    const btn = document.querySelector('.btn-pdf');
-    btn.textContent = '⏳ Gerando...';
-    btn.disabled = true;
-    html2pdf().set(opt).from(el).save().then(() => {
-      btn.textContent = '⬇ Baixar PDF';
-      btn.disabled = false;
-    });
-  }
-
-  // Enter key to add trip
-  ['trip-origin','trip-dest','trip-price','trip-qty','trip-date-start','trip-date-end'].forEach(id => {
-    document.getElementById(id).addEventListener('keydown', e => {
-      if (e.key === 'Enter') addTrip();
-    });
+    try{
+      const saved = await insertReview(entry);
+      reviews.push({
+        id: saved.id,
+        passenger: saved.passenger,
+        stars: saved.stars,
+        comment: saved.comment || '',
+        driver: saved.driver || '',
+        date: saved.created_at
+      });
+      render();
+      closeForm();
+    }catch(e){
+      console.error(e);
+      formError.textContent = 'Erro ao salvar no banco: ' + (e.message || e);
+      formError.classList.add('show');
+    }finally{
+      submitForm.textContent = 'Registrar corrida';
+      submitForm.disabled = false;
+    }
   });
+
+  loadReviews();
+})();
 </script>
+
 </body>
 </html>
